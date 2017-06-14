@@ -8,6 +8,7 @@
 
 #include "drake/automotive/car_vis_applicator.h"
 #include "drake/automotive/curve2.h"
+#include "drake/automotive/faulty_sensor.h"
 #include "drake/automotive/gen/maliput_railcar_state.h"
 #include "drake/automotive/gen/trajectory_car_state.h"
 #include "drake/automotive/idm_controller.h"
@@ -77,6 +78,11 @@ class AutomotiveSimulator {
   /// @return The ID of the car that was just added to the simulation.
   int AddPriusSimpleCar(
       const std::string& name, const std::string& channel_name,
+      const SimpleCarState<T>& initial_state = SimpleCarState<T>());
+
+  // TODO(nikos-tri) Add documentation
+  int AddFaultySensingMobilControlledSimpleCar(
+      const std::string& name, bool initial_with_s,
       const SimpleCarState<T>& initial_state = SimpleCarState<T>());
 
   /// Adds a SimpleCar to this simulation controlled by a MOBIL planner coupled

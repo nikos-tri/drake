@@ -29,6 +29,11 @@ DEFINE_int32(num_mobil_car, 0,
              "currently only applied when the road network is a dragway. "
              "MOBIL-controlled vehicles are placed behind any idm-controlled "
              "railcars and any fixed-speed railcars.");
+DEFINE_int32(num_faulty_sensing_mobil_car, 0,
+             "Number of MOBIL-controlled SimpleCar vehicles with faulty sensing. This option is "
+             "currently only applied when the road network is a dragway. "
+             "MOBIL-controlled vehicles are placed behind any idm-controlled "
+             "railcars and any fixed-speed railcars.");
 DEFINE_int32(num_trajectory_car, 0, "Number of TrajectoryCar vehicles. This "
              "option is currently only applied when the road network is a flat "
              "plane or a dragway.");
@@ -198,6 +203,7 @@ void AddSimpleCars(AutomotiveSimulator<double>* simulator) {
 // `SimpleCar` vehicles and `TrajectoryCar` vehicles. If parameter
 // `road_network_type` equals `RoadNetworkType::dragway`, the provided
 // `road_geometry` parameter must not be `nullptr`.
+// TODO(nikos-tri) add comment about faulty sensing car
 void AddVehicles(RoadNetworkType road_network_type,
     const maliput::api::RoadGeometry* road_geometry,
     AutomotiveSimulator<double>* simulator) {
@@ -238,6 +244,24 @@ void AddVehicles(RoadNetworkType road_network_type,
       state.set_x(x_offset);
       state.set_y(y_offset);
       simulator->AddMobilControlledSimpleCar(name, true /* with_s */, state);
+    }
+
+    for (int i = 0; i < FLAGS_num_faulty_sensing_mobil_car; ++i) {
+      const int lane_index = i % FLAGS_num_dragway_lanes;
+      const std::string name = "FAULTY_SENSING_MOBIL" + std::to_string(i);
+      SimpleCarState<double> state;
+      const int row = i / FLAGS_num_dragway_lanes;
+      const double x_offset = kControlledCarRowSpacing * row;
+      const Lane* lane =
+          dragway_road_geometry->junction(0)->segment(0)->lane(lane_index);
+      if (x_offset >= lane->length()) {
+        throw std::runtime_error(
+            "Ran out of lane length to add new MOBIL-controlled SimpleCars.");
+      }
+      const double y_offset = lane->ToGeoPosition({0., 0., 0.}).y();
+      state.set_x(x_offset);
+      state.set_y(y_offset);
+      simulator->AddFaultySensingMobilControlledSimpleCar(name, true /* with_s */, state);
     }
 
     AddMaliputRailcar(FLAGS_num_idm_controlled_maliput_railcar,

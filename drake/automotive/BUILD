@@ -144,9 +144,20 @@ drake_cc_library(
     hdrs = ["curve2.h"],
     deps = [
         ":generated_vectors",
-        "//drake/common:autodiff",
+        "//drake/systems/rendering:pose_bundle",
     ],
 )
+
+drake_cc_library(
+    name = "faulty_sensor",
+    srcs = ["faulty_sensor.cc"],
+    hdrs = ["faulty_sensor.h"],
+    deps = [
+    		":generated_vectors",
+        "//drake/systems/rendering:pose_bundle",
+    ],
+)
+
 
 drake_cc_library(
     name = "idm_controller",
@@ -359,6 +370,7 @@ drake_cc_library(
     hdrs = ["automotive_simulator.h"],
     deps = [
         ":car_vis_applicator",
+        ":faulty_sensor",
         ":generated_translators",
         ":generated_vectors",
         ":idm_controller",
