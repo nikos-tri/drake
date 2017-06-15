@@ -7,20 +7,23 @@
 
 
 namespace drake {
+
+using systems::rendering::PoseBundle;
+
 namespace automotive {
 	
 	template <typename T>
 	class FaultySensor : public systems::LeafSystem<T> {
 		public:
 		DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(FaultySensor)
-		FaultySensor();
+		explicit FaultySensor();
 
 		const systems::InputPortDescriptor<T>& traffic_input() const;
-		const systems::OutputPortDescriptor<T>& traffic_output() const;
+		const systems::OutputPort<T>& traffic_output() const;
 
 		private:
-		void DoCalcOutput( const systems::Context<T>& context,
-											systems::SystemOutput<T>* output ) const override;
+		void CalcTrafficOutput( const systems::Context<T>& context,
+											PoseBundle<T>* output ) const;
 
 		// Indices for the input/output ports
 		const int traffic_input_index_;
