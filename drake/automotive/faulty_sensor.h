@@ -9,6 +9,8 @@
 namespace drake {
 
 using systems::rendering::PoseBundle;
+using systems::DiscreteValues;
+using systems::Context;
 
 namespace automotive {
 	
@@ -25,6 +27,8 @@ namespace automotive {
 		PoseBundle<T> MakeTrafficOutput() const;
 		void CalcTrafficOutput( const systems::Context<T>& context,
 											PoseBundle<T>* output ) const;
+		void DoCalcDiscreteVariableUpdates( const Context<T>& context,
+																				DiscreteValues<T>* discrete_state_update ) const override;
 
 		// Indices for the input/output ports
 		const int traffic_input_index_;

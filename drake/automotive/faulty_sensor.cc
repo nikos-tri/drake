@@ -2,7 +2,8 @@
 
 namespace drake {
 
-using systems::rendering::PoseBundle;
+using std::cout;
+using std::endl;
 
 namespace automotive {
 
@@ -12,7 +13,9 @@ FaultySensor<T>::FaultySensor()
 	traffic_output_index_{this->DeclareAbstractOutputPort( 
 	&FaultySensor::MakeTrafficOutput,
 	&FaultySensor::CalcTrafficOutput).get_index() } { 
-	// Nothing else is needed at this point.
+
+		this->DeclareDiscreteState( 1 );
+		this->DeclareDiscreteUpdatePeriodSec( 1 );
 }
 
 template <typename T>
@@ -39,14 +42,22 @@ void FaultySensor<T>::CalcTrafficOutput( const systems::Context<T>& context,
 																															context,
 																															traffic_input_index_ );
 	DRAKE_ASSERT( input_traffic_poses != nullptr );
-
-//	PoseBundle<T>* output_traffic_poses = &output->GetMutableData( traffic_output_index_ )
-//	                                             ->template GetMutableValue<PoseBundle<T>>();
 	DRAKE_ASSERT( output_traffic_poses != nullptr );
-
 	PoseBundle<T> copy_of_input( *input_traffic_poses );
 	*output_traffic_poses = copy_of_input;
 }
+
+template <typename T>
+void FaultySensor<T>::DoCalcDiscreteVariableUpdates( const Context<T>& context,
+																		DiscreteValues<T>* discrete_state_update ) const {
+
+	double current_state = context.get_discrete_state(0)->GetAtIndex(0);
+	cout << "Updating state from: " << current_state;
+	double next_state = current_state + 1;
+	cout << " to: " << next_state << endl;
+	(*discrete_state_update)[0] = next_state;
+}
+																		
 
 template class FaultySensor<double>;
 
