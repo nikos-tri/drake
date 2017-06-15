@@ -228,7 +228,7 @@ int AutomotiveSimulator<T>::AddFaultySensingMobilControlledSimpleCar(
   mobil_planner->set_name(name + "_mobil_planner");
   auto idm_controller = builder_->template AddSystem<IdmController<T>>(*road_);
   idm_controller->set_name(name + "_idm_controller");
-  auto faulty_sensor = builder_->template AddSystem<FaultySensor<T>>();
+  auto faulty_sensor = builder_->template AddSystem<FaultySensor<T>>(100, 100);
 
   auto simple_car = builder_->template AddSystem<SimpleCar<T>>();
   simple_car->set_name(name + "_simple_car");
@@ -262,7 +262,9 @@ int AutomotiveSimulator<T>::AddFaultySensingMobilControlledSimpleCar(
                     idm_controller->ego_pose_input());
   builder_->Connect(simple_car->velocity_output(),
                     idm_controller->ego_velocity_input());
-  builder_->Connect(aggregator_->get_output_port(0),
+  //builder_->Connect(aggregator_->get_output_port(0),
+  //                  idm_controller->traffic_input());
+  builder_->Connect(faulty_sensor->traffic_output(),
                     idm_controller->traffic_input());
 
   builder_->Connect(simple_car->pose_output(), pursuit->ego_pose_input());

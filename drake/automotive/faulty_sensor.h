@@ -18,7 +18,7 @@ namespace automotive {
 	class FaultySensor : public systems::LeafSystem<T> {
 		public:
 		DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(FaultySensor)
-		explicit FaultySensor();
+		explicit FaultySensor( double update_period, double error_threshold );
 
 		const systems::InputPortDescriptor<T>& traffic_input() const;
 		const systems::OutputPort<T>& traffic_output() const;
@@ -33,6 +33,9 @@ namespace automotive {
 		// Indices for the input/output ports
 		const int traffic_input_index_;
 		const int traffic_output_index_;
+
+		double error_period_;
+		double error_duty_cycle_;
 	};
 
 } // namespace automotive
