@@ -9,7 +9,9 @@ namespace automotive {
 template <typename T>
 FaultySensor<T>::FaultySensor() 
 	: traffic_input_index_{this->DeclareAbstractInputPort().get_index()},
-	traffic_output_index_{this->DeclareAbstractOutputPort( &FaultySensor::CalcTrafficOutput).get_index() } { 
+	traffic_output_index_{this->DeclareAbstractOutputPort( 
+	&FaultySensor::MakeTrafficOutput,
+	&FaultySensor::CalcTrafficOutput).get_index() } { 
 	// Nothing else is needed at this point.
 }
 
@@ -21,6 +23,11 @@ const systems::InputPortDescriptor<T>& FaultySensor<T>::traffic_input() const {
 template <typename T>
 const systems::OutputPort<T>& FaultySensor<T>::traffic_output() const {
 	return systems::System<T>::get_output_port( traffic_output_index_ );
+}
+
+template <typename T>
+PoseBundle<T> FaultySensor<T>::MakeTrafficOutput() const {
+	return PoseBundle<T>( 0 );
 }
 
 template <typename T>

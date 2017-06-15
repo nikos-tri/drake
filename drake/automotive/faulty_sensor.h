@@ -22,6 +22,7 @@ namespace automotive {
 		const systems::OutputPort<T>& traffic_output() const;
 
 		private:
+		PoseBundle<T> MakeTrafficOutput() const;
 		void CalcTrafficOutput( const systems::Context<T>& context,
 											PoseBundle<T>* output ) const;
 
