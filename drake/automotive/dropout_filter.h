@@ -15,10 +15,10 @@ using systems::Context;
 namespace automotive {
 	
 	template <typename T>
-	class FaultySensor : public systems::LeafSystem<T> {
+	class DropoutFilter : public systems::LeafSystem<T> {
 		public:
-		DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(FaultySensor)
-		explicit FaultySensor( double update_period, double error_threshold );
+		DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(DropoutFilter)
+		explicit DropoutFilter( double update_period, double error_threshold );
 
 		const systems::InputPortDescriptor<T>& traffic_input() const;
 		const systems::OutputPort<T>& traffic_output() const;

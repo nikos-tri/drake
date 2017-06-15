@@ -1,4 +1,4 @@
-#include "drake/automotive/faulty_sensor.h"
+#include "drake/automotive/dropout_filter.h"
 
 namespace drake {
 
@@ -8,11 +8,11 @@ using std::endl;
 namespace automotive {
 
 template <typename T>
-FaultySensor<T>::FaultySensor( double error_period, double error_duty_cycle ) 
+DropoutFilter<T>::DropoutFilter( double error_period, double error_duty_cycle )
 	: traffic_input_index_{this->DeclareAbstractInputPort().get_index()},
 	traffic_output_index_{this->DeclareAbstractOutputPort( 
-	&FaultySensor::MakeTrafficOutput,
-	&FaultySensor::CalcTrafficOutput).get_index() } { 
+	&DropoutFilter::MakeTrafficOutput,
+	&DropoutFilter::CalcTrafficOutput).get_index() } {
 
 
 		error_period_ = error_period;
@@ -25,22 +25,22 @@ FaultySensor<T>::FaultySensor( double error_period, double error_duty_cycle )
 }
 
 template <typename T>
-const systems::InputPortDescriptor<T>& FaultySensor<T>::traffic_input() const {
+const systems::InputPortDescriptor<T>& DropoutFilter<T>::traffic_input() const {
 	return systems::System<T>::get_input_port( traffic_input_index_ );
 }
 
 template <typename T>
-const systems::OutputPort<T>& FaultySensor<T>::traffic_output() const {
+const systems::OutputPort<T>& DropoutFilter<T>::traffic_output() const {
 	return systems::System<T>::get_output_port( traffic_output_index_ );
 }
 
 template <typename T>
-PoseBundle<T> FaultySensor<T>::MakeTrafficOutput() const {
+PoseBundle<T> DropoutFilter<T>::MakeTrafficOutput() const {
 	return PoseBundle<T>( 0 );
 }
 
 template <typename T>
-void FaultySensor<T>::CalcTrafficOutput( const systems::Context<T>& context,
+void DropoutFilter<T>::CalcTrafficOutput( const systems::Context<T>& context,
                                     PoseBundle<T>* output_traffic_poses ) const {
 
 
@@ -61,7 +61,7 @@ void FaultySensor<T>::CalcTrafficOutput( const systems::Context<T>& context,
 }
 
 template <typename T>
-void FaultySensor<T>::DoCalcDiscreteVariableUpdates( const Context<T>& context,
+void DropoutFilter<T>::DoCalcDiscreteVariableUpdates( const Context<T>& context,
 																		DiscreteValues<T>* discrete_state_update ) const {
 
 	double current_state = context.get_discrete_state(0)->GetAtIndex(0);
@@ -77,7 +77,7 @@ void FaultySensor<T>::DoCalcDiscreteVariableUpdates( const Context<T>& context,
 }
 																		
 
-template class FaultySensor<double>;
+template class DropoutFilter<double>;
 
 } // namespace automotive
 } // namespace drake

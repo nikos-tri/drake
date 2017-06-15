@@ -8,7 +8,7 @@
 
 #include "drake/automotive/car_vis_applicator.h"
 #include "drake/automotive/curve2.h"
-#include "drake/automotive/faulty_sensor.h"
+#include "drake/automotive/dropout_filter.h"
 #include "drake/automotive/gen/maliput_railcar_state.h"
 #include "drake/automotive/gen/trajectory_car_state.h"
 #include "drake/automotive/idm_controller.h"

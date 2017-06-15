@@ -149,15 +149,14 @@ drake_cc_library(
 )
 
 drake_cc_library(
-    name = "faulty_sensor",
-    srcs = ["faulty_sensor.cc"],
-    hdrs = ["faulty_sensor.h"],
+    name = "dropout_filter",
+    srcs = ["dropout_filter.cc"],
+    hdrs = ["dropout_filter.h"],
     deps = [
-    		":generated_vectors",
+        ":generated_vectors",
         "//drake/systems/rendering:pose_bundle",
     ],
 )
-
 
 drake_cc_library(
     name = "idm_controller",
@@ -370,7 +369,7 @@ drake_cc_library(
     hdrs = ["automotive_simulator.h"],
     deps = [
         ":car_vis_applicator",
-        ":faulty_sensor",
+        ":dropout_filter",
         ":generated_translators",
         ":generated_vectors",
         ":idm_controller",
