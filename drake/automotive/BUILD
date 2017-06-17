@@ -128,6 +128,17 @@ drake_cc_library(
 )
 
 drake_cc_library(
+		name = "crash_monitor",
+		srcs = ["crash_monitor.cc"],
+		hdrs = ["crash_monitor.h"],
+		deps = [
+        "//drake/common:cond",
+        "//drake/systems/framework",
+        "//drake/systems/rendering:pose_aggregator",
+		],
+)
+
+drake_cc_library(
     name = "curve2",
     srcs = ["curve2.cc"],
     hdrs = ["curve2.h"],
