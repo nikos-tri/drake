@@ -395,6 +395,7 @@ drake_cc_binary(
     ],
     deps = [
         ":automotive_simulator",
+        ":crash_monitor",
         ":monolane_onramp_merge",
         "//drake/automotive/maliput/dragway",
         "//drake/common:text_logging_gflags",

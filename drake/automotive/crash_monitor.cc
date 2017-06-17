@@ -1,10 +1,7 @@
-#include "drake/automotive/fixed_step_crash_monitor.h"
+#include "drake/automotive/crash_monitor.h"
 
 namespace drake {
 
-using drake::systems::BasicVector;
-using drake::systems::Context;
-using drake::systems::DiscreteValues;
 
 using std::cout;
 using std::endl;
@@ -38,8 +35,8 @@ const systems::OutputPort<T>& CrashMonitor<T>::crash_count() const {
 template <typename T>
 void CrashMonitor<T>::CalcNumberOfCrashes( const systems::Context<T>& context,
 																						BasicVector<T>* crash_count ) const {
-	const PoseVector<T>* traffic =
-		this->template EvalVectorInput<PoseVector<T>>( context, traffic_input_index_ );
+	const PoseBundle<T>* traffic =
+		this->template EvalVectorInput<PoseBundle<T>>( context, traffic_input_index_ );
 	DRAKE_ASSERT( traffic != nullptr );
 
 	crash_count->SetFromVector( context.get_discrete_state(0) );
@@ -52,8 +49,8 @@ void CrashMonitor<T>::DoCalcDiscreteVariableUpdates( const Context<T>& context,
 
 	T crash_count = context.get_discrete_state(0)->GetAtIndex(0);
 
-	const PoseVector<T>* traffic_input =
-		this->template EvalVectorInput<PoseVector<T>>( context, traffic_input_index_ );
+	const PoseBundle<T>* traffic_input =
+		this->template EvalVectorInput<PoseBundle<T>>( context, traffic_input_index_ );
 	DRAKE_ASSERT( traffic_input != nullptr );
 
 	if ( has_crash( traffic_input ) ) {
@@ -64,7 +61,7 @@ void CrashMonitor<T>::DoCalcDiscreteVariableUpdates( const Context<T>& context,
 }
 
 template <typename T>
-bool has_crash( const PoseVector<T>& traffic ) {
+bool has_crash( const PoseBundle<T>& traffic ) {
 	cout << "Checking for crashes...";	
 
 	for ( int k = 0; k < traffic.get_num_poses(); k++ ) {

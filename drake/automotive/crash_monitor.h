@@ -8,9 +8,10 @@ namespace drake {
 
 using drake::systems::Context;
 using drake::systems::DiscreteValues;
-
-using std::cout;
-using std::endl;
+using drake::systems::rendering::PoseBundle;
+using drake::systems::BasicVector;
+using drake::systems::Context;
+using drake::systems::DiscreteValues;
 
 namespace automotive {
 
@@ -32,13 +33,14 @@ class CrashMonitor : public systems::LeafSystem<T> {
 	private:
 	void DoCalcDiscreteVariableUpdates( const Context<T>& context,
 																			DiscreteValues<T>* state_updates ) const;
-	bool has_crash( const PoseVector<T>& traffic ) const;
+	void CalcNumberOfCrashes( const Context<T>& context,
+														BasicVector<T>* crash_count ) const;
+	bool has_crash( const PoseBundle<T>& traffic ) const;
 
 
 	const T epsilon_;
 	const int traffic_input_index_;
 	const int crash_count_index_;
-
 
 };
 
