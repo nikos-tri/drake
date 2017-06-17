@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "drake/automotive/crash_monitor.h"
+#include "drake/automotive/dropout_filter.h"
 #include "drake/automotive/gen/driving_command.h"
 #include "drake/automotive/gen/driving_command_translator.h"
 #include "drake/automotive/gen/euler_floating_joint_state_translator.h"
@@ -228,7 +230,8 @@ int AutomotiveSimulator<T>::AddFaultySensingMobilControlledSimpleCar(
   mobil_planner->set_name(name + "_mobil_planner");
   auto idm_controller = builder_->template AddSystem<IdmController<T>>(*road_);
   idm_controller->set_name(name + "_idm_controller");
-  auto faulty_sensor = builder_->template AddSystem<DropoutFilter<T>>(100, 100);
+  auto dropout_filter = builder_->template AddSystem<DropoutFilter<T>>(100, 100);
+  auto crash_monitor = builder_->template AddSystem<CrashMonitor<T>>( 0.001, 1);
 
   auto simple_car = builder_->template AddSystem<SimpleCar<T>>();
   simple_car->set_name(name + "_simple_car");
@@ -245,6 +248,10 @@ int AutomotiveSimulator<T>::AddFaultySensingMobilControlledSimpleCar(
   builder_->Connect(simple_car->state_output(),
                     coord_transform->get_input_port(0));
 
+  // Wire up the crash monitor
+  builder_->Connect( aggregator_->get_output_port(0),
+  									crash_monitor->traffic_input() );
+
   // Wire up MobilPlanner and IdmController.
   builder_->Connect(simple_car->pose_output(), mobil_planner->ego_pose_input());
   builder_->Connect(simple_car->velocity_output(),
@@ -254,8 +261,8 @@ int AutomotiveSimulator<T>::AddFaultySensingMobilControlledSimpleCar(
   //builder_->Connect(aggregator_->get_output_port(0),
   //                  mobil_planner->traffic_input());
   builder_->Connect(aggregator_->get_output_port(0),
-                    faulty_sensor->traffic_input());
-  builder_->Connect(faulty_sensor->traffic_output(),
+                    dropout_filter->traffic_input());
+  builder_->Connect(dropout_filter->traffic_output(),
                     mobil_planner->traffic_input());
 
   builder_->Connect(simple_car->pose_output(),
@@ -264,7 +271,7 @@ int AutomotiveSimulator<T>::AddFaultySensingMobilControlledSimpleCar(
                     idm_controller->ego_velocity_input());
   //builder_->Connect(aggregator_->get_output_port(0),
   //                  idm_controller->traffic_input());
-  builder_->Connect(faulty_sensor->traffic_output(),
+  builder_->Connect(dropout_filter->traffic_output(),
                     idm_controller->traffic_input());
 
   builder_->Connect(simple_car->pose_output(), pursuit->ego_pose_input());

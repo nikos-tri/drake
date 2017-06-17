@@ -132,9 +132,11 @@ drake_cc_library(
 		srcs = ["crash_monitor.cc"],
 		hdrs = ["crash_monitor.h"],
 		deps = [
+        ":generated_vectors",
         "//drake/common:cond",
         "//drake/systems/framework",
         "//drake/systems/rendering:pose_aggregator",
+        "//drake/systems/rendering:pose_bundle",
 		],
 )
 
@@ -369,6 +371,7 @@ drake_cc_library(
     hdrs = ["automotive_simulator.h"],
     deps = [
         ":car_vis_applicator",
+        ":crash_monitor",
         ":dropout_filter",
         ":generated_translators",
         ":generated_vectors",
@@ -406,7 +409,6 @@ drake_cc_binary(
     ],
     deps = [
         ":automotive_simulator",
-        ":crash_monitor",
         ":monolane_onramp_merge",
         "//drake/automotive/maliput/dragway",
         "//drake/common:text_logging_gflags",
