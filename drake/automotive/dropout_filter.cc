@@ -45,16 +45,16 @@ void DropoutFilter<T>::CalcTrafficOutput( const systems::Context<T>& context,
 	// TODO(nikos-tri) delete these crude debugging tools
 	static int dropped; static int passed;
 
-	double current_state = context.get_discrete_state(0)->GetAtIndex(0);
-	cout << "-----------------------------------------------------------------------"<<endl;
-	cout << "current state is: " << current_state << endl;
-	cout << "error_duty_cycle is: " << error_duty_cycle_ << endl;
+	T current_state = context.get_discrete_state(0)->GetAtIndex(0);
+//	cout << "-----------------------------------------------------------------------"<<endl;
+//	cout << "current state is: " << current_state << endl;
+//	cout << "error_duty_cycle is: " << error_duty_cycle_ << endl;
 	if ( current_state >= (100 - error_duty_cycle_) ) {
-		cout << "Dropping frame!" << endl;
+//		cout << "Dropping frame!" << endl;
 		*output_traffic_poses = PoseBundle<T>(0);
 		dropped++;
 	} else {
-		cout << "Forwarding posebundle without errors" << endl;
+//		cout << "Forwarding posebundle without errors" << endl;
 		const PoseBundle<T>* const input_traffic_poses = this->template EvalInputValue<PoseBundle<T>>( 
 																																context,
 																																traffic_input_index_ );
@@ -65,7 +65,7 @@ void DropoutFilter<T>::CalcTrafficOutput( const systems::Context<T>& context,
 		passed++;
 	}
 
-	cout << "dropped: " << dropped << " passed: " << passed << endl;
+	//cout << "dropped: " << dropped << " passed: " << passed << endl;
 }
 
 template <typename T>
@@ -73,20 +73,21 @@ void DropoutFilter<T>::DoCalcDiscreteVariableUpdates( const Context<T>& context,
 																		DiscreteValues<T>* discrete_state_update ) const {
 
 	double current_state = context.get_discrete_state(0)->GetAtIndex(0);
-	cout << "*********************************************************************"<<endl;
-	cout << "Updating state from: " << current_state << endl;
+//	cout << "*********************************************************************"<<endl;
+//	cout << "Updating state from: " << current_state << endl;
 	double next_state = current_state + 1;
 
 	if ( next_state > 100 ) {
 		next_state = 0;
 	}
 
-	cout << " to: " << next_state << endl;
+	//cout << " to: " << next_state << endl;
 	(*discrete_state_update)[0] = next_state;
 }
 																		
 
 template class DropoutFilter<double>;
+template class DropoutFilter<AutoDiffXd>;
 
 } // namespace automotive
 } // namespace drake
