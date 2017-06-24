@@ -57,7 +57,7 @@ void CrashMonitor<T>::DoCalcDiscreteVariableUpdates( const Context<T>& context,
 		this->template EvalInputValue<PoseBundle<T>>( context, traffic_input_index_ );
 	DRAKE_ASSERT( traffic_input != nullptr );
 
-	cout << "Updating crash count..." << endl;
+	//cout << "Updating crash count..." << endl;
 	if ( has_crash( *traffic_input ) ) {
 		(*state_updates)[0] = crash_count + 1;
 	} else {
@@ -67,16 +67,16 @@ void CrashMonitor<T>::DoCalcDiscreteVariableUpdates( const Context<T>& context,
 
 template <typename T>
 bool CrashMonitor<T>::has_crash( const PoseBundle<T>& traffic ) const {
-	cout << "Checking for crashes...";	
+	//cout << "Checking for crashes...";	
 
 	// TODO: Use pose_selector
 	// See IDM controller for example
 
 	for ( int k = 0; k < traffic.get_num_poses(); k++ ) {
 		Isometry3<T> this_pose = traffic.get_pose( k );
-		cout << "Inspecting pose: " << k << endl;
-		cout << "x position: " << this_pose.translation().x() << endl;
-		cout << "y position: " << this_pose.translation().y() << endl;
+		//cout << "Inspecting pose: " << k << endl;
+		//cout << "x position: " << this_pose.translation().x() << endl;
+		//cout << "y position: " << this_pose.translation().y() << endl;
 	}
 
 	return true;

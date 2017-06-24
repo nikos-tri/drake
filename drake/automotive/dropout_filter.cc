@@ -14,13 +14,11 @@ DropoutFilter<T>::DropoutFilter( double error_period, double error_duty_cycle )
 	&DropoutFilter::MakeTrafficOutput,
 	&DropoutFilter::CalcTrafficOutput).get_index() } {
 
-
 		error_period_ = error_period;
 		error_duty_cycle_ = error_duty_cycle;
 
 		this->DeclareDiscreteState( 1 );
 		this->DeclareDiscreteUpdatePeriodSec( error_period/100 );
-
 }
 
 template <typename T>
@@ -72,10 +70,10 @@ template <typename T>
 void DropoutFilter<T>::DoCalcDiscreteVariableUpdates( const Context<T>& context,
 																		DiscreteValues<T>* discrete_state_update ) const {
 
-	double current_state = context.get_discrete_state(0)->GetAtIndex(0);
+	T current_state = context.get_discrete_state(0)->GetAtIndex(0);
 //	cout << "*********************************************************************"<<endl;
 //	cout << "Updating state from: " << current_state << endl;
-	double next_state = current_state + 1;
+	T next_state = current_state + 1;
 
 	if ( next_state > 100 ) {
 		next_state = 0;
