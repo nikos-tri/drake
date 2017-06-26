@@ -32,6 +32,16 @@ const systems::OutputPort<T>& DropoutFilter<T>::traffic_output() const {
 }
 
 template <typename T>
+std::unique_ptr<DropoutFilter<AutoDiffXd>> DropoutFilter<T>::ToAutoDiffXd() const {
+	return std::unique_ptr<DropoutFilter<AutoDiffXd>>( DoToAutoDiffXd() );
+}
+
+template <typename T>
+DropoutFilter<AutoDiffXd>* DropoutFilter<T>::DoToAutoDiffXd() const {
+	return new DropoutFilter<AutoDiffXd>( this->error_period_, this->error_duty_cycle_ );
+}
+
+template <typename T>
 PoseBundle<T> DropoutFilter<T>::MakeTrafficOutput() const {
 	return PoseBundle<T>( 0 );
 }
@@ -44,9 +54,6 @@ void DropoutFilter<T>::CalcTrafficOutput( const systems::Context<T>& context,
 	static int dropped; static int passed;
 
 	T current_state = context.get_discrete_state(0)->GetAtIndex(0);
-//	cout << "-----------------------------------------------------------------------"<<endl;
-//	cout << "current state is: " << current_state << endl;
-//	cout << "error_duty_cycle is: " << error_duty_cycle_ << endl;
 	if ( current_state >= (100 - error_duty_cycle_) ) {
 //		cout << "Dropping frame!" << endl;
 		*output_traffic_poses = PoseBundle<T>(0);
@@ -71,8 +78,7 @@ void DropoutFilter<T>::DoCalcDiscreteVariableUpdates( const Context<T>& context,
 																		DiscreteValues<T>* discrete_state_update ) const {
 
 	T current_state = context.get_discrete_state(0)->GetAtIndex(0);
-//	cout << "*********************************************************************"<<endl;
-//	cout << "Updating state from: " << current_state << endl;
+	//cout << "Updating state from: " << current_state;
 	T next_state = current_state + 1;
 
 	if ( next_state > 100 ) {

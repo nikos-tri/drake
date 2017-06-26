@@ -18,10 +18,16 @@ namespace automotive {
 	class DropoutFilter : public systems::LeafSystem<T> {
 		public:
 		DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(DropoutFilter)
-		explicit DropoutFilter( double update_period, double error_threshold );
+		explicit DropoutFilter( double update_period, double error_duty_cycle );
 
 		const systems::InputPortDescriptor<T>& traffic_input() const;
 		const systems::OutputPort<T>& traffic_output() const;
+		std::unique_ptr<DropoutFilter<AutoDiffXd>> ToAutoDiffXd() const;
+
+		protected:
+		// System<T> override. Returns DropoutFilter<AutoDiffXd> with the same
+		// update period and error duty cycle as this DropoutFilter
+		DropoutFilter<AutoDiffXd>* DoToAutoDiffXd() const override;
 
 		private:
 		PoseBundle<T> MakeTrafficOutput() const;
