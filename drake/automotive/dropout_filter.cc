@@ -4,6 +4,7 @@ namespace drake {
 
 using std::cout;
 using std::endl;
+using systems::BasicVector;
 
 namespace automotive {
 
@@ -19,6 +20,9 @@ DropoutFilter<T>::DropoutFilter( double error_period, double error_duty_cycle )
 
 		this->DeclareDiscreteState( 1 );
 		this->DeclareDiscreteUpdatePeriodSec( error_period/100 );
+
+		std::unique_ptr<BasicVector<T>> parameters = BasicVector<T>::Make( error_period, error_duty_cycle );
+		this->DeclareNumericParameter( *parameters ); 
 }
 
 template <typename T>
