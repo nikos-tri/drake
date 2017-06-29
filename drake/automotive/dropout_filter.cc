@@ -4,12 +4,13 @@ namespace drake {
 
 using std::cout;
 using std::endl;
-using systems::BasicVector;
+
+static constexpr int kDropoutFilterParamsIndex{0};
 
 namespace automotive {
 
 template <typename T>
-DropoutFilter<T>::DropoutFilter( double error_period, double error_duty_cycle )
+DropoutFilter<T>::DropoutFilter( T error_period )
 	: traffic_input_index_{this->DeclareAbstractInputPort().get_index()},
 	traffic_output_index_{this->DeclareAbstractOutputPort( 
 	&DropoutFilter::MakeTrafficOutput,
@@ -19,10 +20,10 @@ DropoutFilter<T>::DropoutFilter( double error_period, double error_duty_cycle )
 		error_duty_cycle_ = error_duty_cycle;
 
 		this->DeclareDiscreteState( 1 );
-		this->DeclareDiscreteUpdatePeriodSec( error_period/100 );
+		this->DeclareDiscreteUpdatePeriodSec( (double)error_period/100 );
 
-		std::unique_ptr<BasicVector<T>> parameters = BasicVector<T>::Make( error_period, error_duty_cycle );
-		this->DeclareNumericParameter( *parameters ); 
+		//std::unique_ptr<BasicVector<T>> parameters = BasicVector<T>::Make( error_period, error_duty_cycle );
+		this->DeclareNumericParameter( DropoutFilterParameters<T>() );
 }
 
 template <typename T>
@@ -42,7 +43,8 @@ std::unique_ptr<DropoutFilter<AutoDiffXd>> DropoutFilter<T>::ToAutoDiffXd() cons
 
 template <typename T>
 DropoutFilter<AutoDiffXd>* DropoutFilter<T>::DoToAutoDiffXd() const {
-	return new DropoutFilter<AutoDiffXd>( this->error_period_, this->error_duty_cycle_ );
+	return new DropoutFilter<AutoDiffXd>( (AutoDiffXd)(this->error_period_), 
+																				(AutoDiffXd)(this->error_duty_cycle_) );
 }
 
 template <typename T>
@@ -57,8 +59,8 @@ void DropoutFilter<T>::CalcTrafficOutput( const systems::Context<T>& context,
 	// TODO(nikos-tri) delete these crude debugging tools
 	static int dropped; static int passed;
 
-	T current_state = context.get_discrete_state(0)->GetAtIndex(0);
-	if ( current_state >= (100 - error_duty_cycle_) ) {
+	//if ( /*state >= (100 - error_duty_cycle_)*/ 
+	if ( is_time_to_drop_frame( context ) ) {
 //		cout << "Dropping frame!" << endl;
 		*output_traffic_poses = PoseBundle<T>(0);
 		dropped++;
@@ -75,6 +77,18 @@ void DropoutFilter<T>::CalcTrafficOutput( const systems::Context<T>& context,
 	}
 
 	//cout << "dropped: " << dropped << " passed: " << passed << endl;
+}
+
+template <typename T>
+bool DropoutFilter<T>::is_time_to_drop_frame( Context<T>& context ) const {
+	//BasicVector<T>& parameters = this->template GetNumericParameter<BasicVector<T>>( context, 0);
+	//error_duty_cycle = parameters->GetAtIndex(1);
+	const DropoutFilterParameters<T>& filter_params =
+			this->template GetNumericParameter<DropoutFilterParameters>(context,
+																																	kDropoutFilterParamsIndex );
+			DRAKE_DEMAND( filter_params.IsValid() );
+	T state = context.get_discrete_state(0)->GetAtIndex(0);
+	return (state >= (100 - error_duty_cycle ) );
 }
 
 template <typename T>
