@@ -1,0 +1,8 @@
+element {
+    name: "dropout_duty_cycle"
+    doc: "percentage of time that filter will drop frames"
+    doc_units: "percentage"
+    default_value: "50.0"
+    min_value: "0.0"
+    max_value: "100.0"
+}

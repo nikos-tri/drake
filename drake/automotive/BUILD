@@ -28,6 +28,7 @@ drake_cc_library(
         "gen/simple_car_state.cc",
         "gen/trajectory_car_params.cc",
         "gen/trajectory_car_state.cc",
+        "gen/dropout_filter_parameters.cc",
     ],
     hdrs = [
         "gen/bicycle_car_parameters.h",
@@ -43,6 +44,7 @@ drake_cc_library(
         "gen/simple_car_state.h",
         "gen/trajectory_car_params.h",
         "gen/trajectory_car_state.h",
+        "gen/dropout_filter_parameters.h",
     ],
     deps = [
         "//drake/systems/framework",
