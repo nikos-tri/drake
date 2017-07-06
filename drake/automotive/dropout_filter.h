@@ -4,6 +4,7 @@
 #include "drake/common/drake_copyable.h"
 #include "drake/systems/framework/leaf_system.h"
 #include "drake/systems/rendering/pose_bundle.h"
+#include "drake/automotive/gen/dropout_filter_parameters.h"
 
 
 namespace drake {
@@ -18,7 +19,7 @@ namespace automotive {
 	class DropoutFilter : public systems::LeafSystem<T> {
 		public:
 		DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(DropoutFilter)
-		explicit DropoutFilter( T update_period, T error_duty_cycle );
+		explicit DropoutFilter( double update_period );
 
 		const systems::InputPortDescriptor<T>& traffic_input() const;
 		const systems::OutputPort<T>& traffic_output() const;
@@ -35,14 +36,13 @@ namespace automotive {
 											PoseBundle<T>* output ) const;
 		void DoCalcDiscreteVariableUpdates( const Context<T>& context,
 																				DiscreteValues<T>* discrete_state_update ) const override;
-		bool DropoutFilter<T>::is_time_to_drop_frame( Context<T>& context ) const;
+		bool is_time_to_drop_frame( const Context<T>& context ) const;
 
 		// Indices for the input/output ports
 		const int traffic_input_index_;
 		const int traffic_output_index_;
 
-		T error_period_;
-		T error_duty_cycle_;
+		double error_period_;
 	};
 
 } // namespace automotive

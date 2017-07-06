@@ -230,7 +230,7 @@ int AutomotiveSimulator<T>::AddFaultySensingMobilControlledSimpleCar(
   mobil_planner->set_name(name + "_mobil_planner");
   auto idm_controller = builder_->template AddSystem<IdmController<T>>(*road_);
   idm_controller->set_name(name + "_idm_controller");
-  auto dropout_filter = builder_->template AddSystem<DropoutFilter<T>>(0.05, 99);
+  auto dropout_filter = builder_->template AddSystem<DropoutFilter<T>>(0.05);
   auto crash_monitor = builder_->template AddSystem<CrashMonitor<T>>( 1, 1);
 
   auto simple_car = builder_->template AddSystem<SimpleCar<T>>();
