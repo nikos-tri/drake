@@ -3,28 +3,30 @@
 namespace drake {
 
 using std::vector;
+using drake::systems::Context;
+using drake::systems::InputPortDescriptor;
+using drake::systems::OutputPort;
+using drake::systems::System;
+using drake::systems::BasicVector;
+
+using std::cout;
+using std::endl;
+
 namespace perception {
 
-//template <typename T>
-//NeuralNetwork<T>::NeuralNetwork()
-//	:input_index_{ this->DeclareAbstractInputPort().get_index() },
-//	output_index_{ this->DeclareVectorOutputPort(
-//																		BasicVector<T>(1),
-//																		&NeuralNetwork::CalcOutput ).get_index() } {
-//}
-
-// TODO(nikos-tri) How can I templatize the MatrixXd by T?
 template <typename T>
-NeuralNetwork<T>::NeuralNetwork( std::vector<MatrixXd> W,
-																	std::vector<VectorXd> b,
+NeuralNetwork<T>::NeuralNetwork( std::vector<MatrixX<T>> W,
+																	std::vector<VectorX<T>> b,
 																	std::vector<LayerType> layers,
 																	std::vector<NonlinearityType> nonlinearities )
 	:input_index_{ this->DeclareAbstractInputPort().get_index() },
 	output_index_{ this->DeclareVectorOutputPort(
-																		BasicVector<T>(1), // for example
-																		&NeuralNetwork::CalcOutput ).get_index() } {
+																		BasicVector<T>(W[W.size()-1].rows()), 
+																		&NeuralNetwork::DoCalcOutput ).get_index() } {
 
 	DRAKE_THROW_UNLESS( W.size() == b.size() );
+	DRAKE_THROW_UNLESS( W.size() == layers.size() );
+	DRAKE_THROW_UNLESS( W.size() == nonlinearities.size() );
 	for ( vector<int>::size_type i = 0; i < W.size(); i++ ) {
 		matrix_indices_.push_back( this->DeclareNumericParameter( *(encode(W[i])) ) );
 
@@ -33,31 +35,32 @@ NeuralNetwork<T>::NeuralNetwork( std::vector<MatrixXd> W,
 	}
 
 	layers_ = layers;
-	nonlinearities = nonlinearities;
+	nonlinearities_ = nonlinearities;
 
 	// Need to register the structural parameters now, when we have the matrices
-	// on hand. Otherwise we need to get a context argument later Ok to do this
-	// cast to int since we are not going to have a NN that is so large that it
-	// will exhaust the range of int
-	MatrixXd firstMatrix = W[0]; num_inputs_ = firstMatrix.cols();
+	// on hand. Otherwise we need to get a context argument later 
+	
+	// Ok to do this cast to int since we are not going to have a NN that is so
+	// large that it will exhaust the range of int
+	MatrixX<T> firstMatrix = W[0]; num_inputs_ = firstMatrix.cols();
 
-	MatrixXd lastMatrix = W[W.size()-1];
+	MatrixX<T> lastMatrix = W[W.size()-1];
 	num_outputs_ = lastMatrix.rows();
 
 	num_layers_ = W.size();
 }
 
 template <typename T>
-void NeuralNetwork<T>::CalcOutput( const Context<T>& context,
+void NeuralNetwork<T>::DoCalcOutput( const Context<T>& context,
 																					BasicVector<T>* output ) const {
 
 	// Read the input
-	VectorXd inputValue = readInput( context );
+	VectorX<T> inputValue = readInput( context );
 
 	// Evaluate each layer	
-	VectorXd intermediateValue = inputValue;
-	std::unique_ptr<MatrixXd> Weights;
-	std::unique_ptr<VectorXd> bias;
+	VectorX<T> intermediateValue = inputValue;
+	std::unique_ptr<MatrixX<T>> Weights;
+	std::unique_ptr<VectorX<T>> bias;
 	LayerType layerType;
 	NonlinearityType nonlinearity;
 	for ( int i = 0; i < num_layers_; i++ ) {
@@ -76,26 +79,26 @@ void NeuralNetwork<T>::CalcOutput( const Context<T>& context,
 }
 
 template <typename T>
-VectorXd NeuralNetwork<T>::evaluateLayer( const VectorXd& layerInput,
-																					MatrixXd Weights,
-																					VectorXd bias,
+VectorX<T> NeuralNetwork<T>::evaluateLayer( const VectorX<T>& layerInput,
+																					MatrixX<T> Weights,
+																					VectorX<T> bias,
 																					LayerType layer, 
 																					NonlinearityType nonlinearity ) const {
 
 	// Only suppports fully-connected RELU at this time
 	DRAKE_ASSERT( layer == LayerType::FullyConnected );
 	DRAKE_ASSERT( nonlinearity == NonlinearityType::Relu );
-	VectorXd layerOutput = relu( Weights*layerInput + bias );
+	VectorX<T> layerOutput = relu( Weights*layerInput + bias );
 	return layerOutput;
 }
 
 template <typename T>
-VectorXd NeuralNetwork<T>::relu( VectorXd in ) const {
+VectorX<T> NeuralNetwork<T>::relu( VectorX<T> in ) const {
 	// TODO(nikos-tri) This function begs to be optimized, somehow -- maybe like
 	// negIndices = any( input < 0 ) 
 	// input( negIndices ) = 0 
 	// ...or something like that.
-	VectorXd result = in;
+	VectorX<T> result = in;
 	for ( int i = 0; i < result.size(); i++ ) {
 		if ( result(i) < 0 ) {
 			result(i) = 0;
@@ -103,10 +106,6 @@ VectorXd NeuralNetwork<T>::relu( VectorXd in ) const {
 	}
 	return result;
 }
-
-
-
-
 
 template <typename T>
 int NeuralNetwork<T>::getNumLayers() const {
@@ -122,7 +121,7 @@ int NeuralNetwork<T>::getNumOutputs() const {
 }
 
 template <typename T>
-std::unique_ptr<MatrixXd>
+std::unique_ptr<MatrixX<T>>
 NeuralNetwork<T>::getWeightMatrix( int index, const Context<T>& context ) const {
 
 	DRAKE_THROW_UNLESS((0 <= index) && 
@@ -136,7 +135,7 @@ NeuralNetwork<T>::getWeightMatrix( int index, const Context<T>& context ) const 
 }
 
 template <typename T>
-std::unique_ptr<VectorXd>
+std::unique_ptr<VectorX<T>>
 NeuralNetwork<T>::getBiasVector( int index, const Context<T>& context ) const {
 
 	DRAKE_THROW_UNLESS((0 <= index) && 
@@ -146,16 +145,16 @@ NeuralNetwork<T>::getBiasVector( int index, const Context<T>& context ) const {
 		this->template GetNumericParameter<BasicVector>( context,
 																									bias_indices_[index] );
 
-	VectorXd *biasVector = new VectorXd( encodedVector.get_value() );
-	std::unique_ptr<VectorXd> uptr( biasVector );
+	VectorX<T> *biasVector = new VectorX<T>( encodedVector.get_value() );
+	std::unique_ptr<VectorX<T>> uptr( biasVector );
 	return uptr;
 }
 
 template <typename T>
 std::unique_ptr<BasicVector<T>> 
-NeuralNetwork<T>::encode( const MatrixXd& matrix ) const {
+NeuralNetwork<T>::encode( const MatrixX<T>& matrix ) const {
 	// + 2 is to encode matrix dimensions
-	VectorXd dataVector( matrix.size() + 2 );
+	VectorX<T> dataVector( matrix.size() + 2 );
 
 	dataVector << matrix.rows(), matrix.cols();
 	int vectorIndex = 2;
@@ -171,14 +170,14 @@ NeuralNetwork<T>::encode( const MatrixXd& matrix ) const {
 }
 
 template <typename T>
-std::unique_ptr<MatrixXd> 
+std::unique_ptr<MatrixX<T>> 
 NeuralNetwork<T>::decode( const BasicVector<T>& basicVector ) const {
 	int rows = -1; int cols = -1; 
-	VectorXd vector = basicVector.get_value();
+	VectorX<T> vector = basicVector.get_value();
 	rows = vector(0); cols = vector(1);
 
-	MatrixXd * matrix = new MatrixXd(rows, cols);
-	*matrix = MatrixXd::Zero(rows, cols);
+	MatrixX<T> * matrix = new MatrixX<T>(rows, cols);
+	*matrix = MatrixX<T>::Zero(rows, cols);
 
 	int vectorIndex = 2;
 	for ( int i = 0; i < rows; i++ ) {
@@ -188,10 +187,9 @@ NeuralNetwork<T>::decode( const BasicVector<T>& basicVector ) const {
 		}
 	}
 
-	std::unique_ptr<MatrixXd> uptr( matrix );
+	std::unique_ptr<MatrixX<T>> uptr( matrix );
 	return uptr;
 }
-
 
 template <typename T>
 const InputPortDescriptor<T>& NeuralNetwork<T>::input() const {
