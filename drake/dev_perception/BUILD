@@ -15,7 +15,6 @@ package(default_visibility = ["//visibility:public"])
 drake_cc_library(
 	name = "neural_network",
 	srcs = [
-					"neural_network.cc",
 					],
 	hdrs = [
 					"neural_network.h",
@@ -25,12 +24,27 @@ drake_cc_library(
 				 ],
 )
 
-# === test/ ===
-drake_cc_googletest(
-	name = "neural_network_test",
-	srcs = ["test/neural_network_test.cc"],
+drake_cc_library(
+	name = "feedforward_neural_network",
+	srcs = [
+					"feedforward_neural_network.cc",
+					],
+	hdrs = [
+					"feedforward_neural_network.h",
+					],
 	deps = [
 					":neural_network",
+					"//drake/systems/framework",
+				 ],
+)
+
+
+# === test/ ===
+drake_cc_googletest(
+	name = "feedforward_neural_network_test",
+	srcs = ["test/feedforward_neural_network_test.cc"],
+	deps = [
+					":feedforward_neural_network",
 					"//drake/common:eigen_matrix_compare",
 					],
 )
