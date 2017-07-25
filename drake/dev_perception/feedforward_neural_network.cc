@@ -15,10 +15,10 @@ using std::endl;
 namespace perception {
 
 template <typename T>
-FeedforwardNeuralNetwork<T>::FeedforwardNeuralNetwork(std::vector<MatrixX<T>> W,
-                                std::vector<VectorX<T>> b,
-                                std::vector<LayerType> layers,
-                                std::vector<NonlinearityType> nonlinearities)
+FeedforwardNeuralNetwork<T>::FeedforwardNeuralNetwork(const std::vector<MatrixX<T>>& W,
+                                const std::vector<VectorX<T>>& b,
+                                const std::vector<LayerType>& layers,
+                                const std::vector<NonlinearityType>& nonlinearities)
     : input_index_{this->DeclareAbstractInputPort().get_index()},
       output_index_{
           this->DeclareVectorOutputPort(BasicVector<T>(W[W.size() - 1].rows()),
@@ -28,7 +28,7 @@ FeedforwardNeuralNetwork<T>::FeedforwardNeuralNetwork(std::vector<MatrixX<T>> W,
   DRAKE_THROW_UNLESS(W.size() == layers.size());
   DRAKE_THROW_UNLESS(W.size() == nonlinearities.size());
   for (vector<int>::size_type i = 0; i < W.size(); i++) {
-    matrix_indices_.push_back(this->DeclareNumericParameter(*(encode(W[i]))));
+    weight_indices_.push_back(this->DeclareNumericParameter(*(Encode(W[i]))));
 
     BasicVector<T> biasVector(b[i]);
     bias_indices_.push_back(this->DeclareNumericParameter(biasVector));
@@ -64,8 +64,8 @@ void FeedforwardNeuralNetwork<T>::DoCalcOutput(const Context<T>& context,
   LayerType layerType;
   NonlinearityType nonlinearity;
   for (int i = 0; i < num_layers_; i++) {
-    Weights = getWeightMatrix(i, context);
-    bias = getBiasVector(i, context);
+    Weights = get_weight_matrix(i, context);
+    bias = get_bias_vector(i, context);
     layerType = layers_[i];
     nonlinearity = nonlinearities_[i];
 
@@ -104,33 +104,33 @@ VectorX<T> FeedforwardNeuralNetwork<T>::relu(VectorX<T> in) const {
 }
 
 template <typename T>
-int FeedforwardNeuralNetwork<T>::getNumLayers() const {
+int FeedforwardNeuralNetwork<T>::get_num_layers() const {
   return num_layers_;
 }
 template <typename T>
-int FeedforwardNeuralNetwork<T>::getNumInputs() const {
+int FeedforwardNeuralNetwork<T>::get_num_inputs() const {
   return num_inputs_;
 }
 template <typename T>
-int FeedforwardNeuralNetwork<T>::getNumOutputs() const {
+int FeedforwardNeuralNetwork<T>::get_num_outputs() const {
   return num_outputs_;
 }
 
 template <typename T>
-std::unique_ptr<MatrixX<T>> FeedforwardNeuralNetwork<T>::getWeightMatrix(
+std::unique_ptr<MatrixX<T>> FeedforwardNeuralNetwork<T>::get_weight_matrix(
     int index, const Context<T>& context) const {
   DRAKE_THROW_UNLESS((0 <= index) &&
-                     ((vector<int>::size_type)index < matrix_indices_.size()));
+                     ((vector<int>::size_type)index < weight_indices_.size()));
 
   const BasicVector<T>& encodedMatrix =
       this->template GetNumericParameter<BasicVector>(context,
-                                                      matrix_indices_[index]);
+                                                      weight_indices_[index]);
 
-  return decode(encodedMatrix);
+  return Decode(encodedMatrix);
 }
 
 template <typename T>
-std::unique_ptr<VectorX<T>> FeedforwardNeuralNetwork<T>::getBiasVector(
+std::unique_ptr<VectorX<T>> FeedforwardNeuralNetwork<T>::get_bias_vector(
     int index, const Context<T>& context) const {
   DRAKE_THROW_UNLESS((0 <= index) &&
                      ((vector<int>::size_type)index < bias_indices_.size()));
@@ -145,7 +145,7 @@ std::unique_ptr<VectorX<T>> FeedforwardNeuralNetwork<T>::getBiasVector(
 }
 
 template <typename T>
-std::unique_ptr<BasicVector<T>> FeedforwardNeuralNetwork<T>::encode(
+std::unique_ptr<BasicVector<T>> FeedforwardNeuralNetwork<T>::Encode(
     const MatrixX<T>& matrix) const {
   // + 2 is to encode matrix dimensions
   VectorX<T> dataVector(matrix.size() + 2);
@@ -164,7 +164,7 @@ std::unique_ptr<BasicVector<T>> FeedforwardNeuralNetwork<T>::encode(
 }
 
 template <typename T>
-std::unique_ptr<MatrixX<T>> FeedforwardNeuralNetwork<T>::decode(
+std::unique_ptr<MatrixX<T>> FeedforwardNeuralNetwork<T>::Decode(
     const BasicVector<T>& basicVector) const {
   int rows = -1;
   int cols = -1;

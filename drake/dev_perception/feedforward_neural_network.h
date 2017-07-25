@@ -20,24 +20,24 @@ class FeedforwardNeuralNetwork : public NeuralNetwork<T> {
   DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(FeedforwardNeuralNetwork)
 
   /// TODO(nikos-tri): Add documentation
-  explicit FeedforwardNeuralNetwork(
-      std::vector<MatrixX<T>> W, std::vector<VectorX<T>> b,
-      std::vector<LayerType> layers,
-      std::vector<NonlinearityType> nonlinearities);
+  FeedforwardNeuralNetwork(
+      const std::vector<MatrixX<T>>& W, const std::vector<VectorX<T>>& b,
+      const std::vector<LayerType>& layers,
+      const std::vector<NonlinearityType>& nonlinearities);
 
   const systems::InputPortDescriptor<T>& input() const;
   const systems::OutputPort<T>& output() const;
 
-  int getNumLayers() const;
-  int getNumInputs() const;
-  int getNumOutputs() const;
-  std::unique_ptr<MatrixX<T>> getWeightMatrix(
+  int get_num_layers() const;
+  int get_num_inputs() const;
+  int get_num_outputs() const;
+  std::unique_ptr<MatrixX<T>> get_weight_matrix(
       int index, const systems::Context<T>& context) const;
-  std::unique_ptr<VectorX<T>> getBiasVector(
+  std::unique_ptr<VectorX<T>> get_bias_vector(
       int index, const systems::Context<T>& context) const;
-  std::unique_ptr<systems::BasicVector<T>> encode(
+  std::unique_ptr<systems::BasicVector<T>> Encode(
       const MatrixX<T>& matrix) const;
-  std::unique_ptr<MatrixX<T>> decode(
+  std::unique_ptr<MatrixX<T>> Decode(
       const systems::BasicVector<T>& vector) const;
 
  private:
@@ -58,7 +58,7 @@ class FeedforwardNeuralNetwork : public NeuralNetwork<T> {
   std::vector<NonlinearityType> nonlinearities_;
 
   // Indices for weights and biases, which are stored as params in the Context
-  std::vector<int> matrix_indices_;
+  std::vector<int> weight_indices_;
   std::vector<int> bias_indices_;
 
   // Indices for inputs and outputs

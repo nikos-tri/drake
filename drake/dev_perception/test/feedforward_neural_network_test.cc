@@ -58,11 +58,11 @@ GTEST_TEST(FeedforwardNeuralNetworkTest, MatrixCoderDecoder) {
   FeedforwardNeuralNetwork<double> dut(W, B, generateFullyConnectedLayers(2),
                             generateReluNonlinearities(2));
 
-  unique_ptr<BasicVector<double>> encoded1 = dut.encode(W1);
-  unique_ptr<BasicVector<double>> encoded2 = dut.encode(W2);
+  unique_ptr<BasicVector<double>> encoded1 = dut.Encode(W1);
+  unique_ptr<BasicVector<double>> encoded2 = dut.Encode(W2);
 
-  unique_ptr<MatrixXd> W1recovered = dut.decode(*encoded1);
-  unique_ptr<MatrixXd> W2recovered = dut.decode(*encoded2);
+  unique_ptr<MatrixXd> W1recovered = dut.Decode(*encoded1);
+  unique_ptr<MatrixXd> W2recovered = dut.Decode(*encoded2);
 
   EXPECT_EQ(W1, *W1recovered);
   EXPECT_EQ(W2, *W2recovered);
@@ -92,15 +92,15 @@ GTEST_TEST(FeedforwardNeuralNetworkTest, ParameterStorage) {
 
   unique_ptr<Context<double>> context = dut.CreateDefaultContext();
 
-  EXPECT_EQ(W1, *(dut.getWeightMatrix(0, *context)));
-  EXPECT_EQ(W2, *(dut.getWeightMatrix(1, *context)));
-  EXPECT_EQ(W3, *(dut.getWeightMatrix(2, *context)));
+  EXPECT_EQ(W1, *(dut.get_weight_matrix(0, *context)));
+  EXPECT_EQ(W2, *(dut.get_weight_matrix(1, *context)));
+  EXPECT_EQ(W3, *(dut.get_weight_matrix(2, *context)));
 
   // cout << "Expected: " << endl << B1 << endl;
-  // cout << "Recovered: " << endl << *(dut.getBiasVector(0, *context));
-  EXPECT_EQ(B1, *(dut.getBiasVector(0, *context)));
-  EXPECT_EQ(B2, *(dut.getBiasVector(1, *context)));
-  EXPECT_EQ(B3, *(dut.getBiasVector(2, *context)));
+  // cout << "Recovered: " << endl << *(dut.get_bias_vector(0, *context));
+  EXPECT_EQ(B1, *(dut.get_bias_vector(0, *context)));
+  EXPECT_EQ(B2, *(dut.get_bias_vector(1, *context)));
+  EXPECT_EQ(B3, *(dut.get_bias_vector(2, *context)));
 }
 
 // Test that the NN can figure out what "shape" it should be:
@@ -127,9 +127,9 @@ GTEST_TEST(FeedforwardNeuralNetworkTest, ShapeParameters) {
   FeedforwardNeuralNetwork<double> dut(W, B, generateFullyConnectedLayers(3),
                             generateReluNonlinearities(3));
 
-  EXPECT_EQ(dut.getNumLayers(), 3);
-  EXPECT_EQ(dut.getNumInputs(), 19);
-  EXPECT_EQ(dut.getNumOutputs(), 2);
+  EXPECT_EQ(dut.get_num_layers(), 3);
+  EXPECT_EQ(dut.get_num_inputs(), 19);
+  EXPECT_EQ(dut.get_num_outputs(), 2);
 }
 
 // Very basic sanity test of input-output behavior with identity weight
