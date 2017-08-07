@@ -13,14 +13,28 @@ load("//tools:python_lint.bzl", "python_lint")
 package(default_visibility = ["//visibility:public"])
 
 drake_cc_library(
-  name = "neural_network",
+  name = "layer_specification",
   srcs = [
+          "layer_specification.cc",
           ],
+  hdrs = [
+         "layer_specification.h",
+         ],
+  deps = [
+         "//drake/systems/framework",
+         "//drake/common:common",
+         ],
+)
+
+drake_cc_library(
+  name = "neural_network",
   hdrs = [
           "neural_network.h",
           ],
   deps = [
+  				":layer_specification",
           "//drake/systems/framework",
+          "//drake/common:common",
          ],
 )
 
