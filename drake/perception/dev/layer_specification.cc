@@ -10,11 +10,17 @@ LayerResult<T> LayerSpecification<T>::Evaluate( const LayerResult<T>& input, con
 	// Can't call a convolutional layer with a vector input
 	LayerResult<T> r;
 	if ( is_fully_connected() ) {
+		// TODO(nikos-tri) Need to check if the input is a tensor, i.e. if
+		// the previous layer is a convolutional layer, and then we need to
+		// reshape it into a vector
 		auto weights = *(WeightsMatrixFromBasicVector( weights_vector ));
 		auto bias = *(BiasVectorFromBasicVector( bias_vector ));
 		r.v = weights*input.v + bias;
 	} else if ( is_convolutional() ) {
-		//Convolve( input.tI//
+		// TODO(nikos-tri) Do we need to check if the input is a vector, and reshape
+		// it into a tensor? I have not seen any architectures that stack a
+		// convolutional layer after a fully-connected layer
+		ConvolveAndBias( input.t, filter_bank_, matrix_bias_bank_ );
 		//TODO(nikos-tri) add bias
 		DRAKE_DEMAND(false);
 	} else {
@@ -44,22 +50,44 @@ LayerResult<T> LayerSpecification<T>::Relu(const LayerResult<T>& in) const {
 }
 
 template <typename T>
-Tensor<T, 3> LayerSpecification<T>::Convolve(Tensor<T, 3> input, std::vector<Tensor<T, 3>> filters) const {
+Tensor<T, 3> LayerSpecification<T>::ConvolveAndBias(const Tensor<T, 3>& input, const std::vector<Tensor<T, 3>>& filters, const std::vector<MatrixX<T>>& biases ) const {
 
 	auto input_dimensions = input.dimensions();
   Tensor<T, 3> output_volume( input_dimensions[0], input_dimensions[1], filters.size() );
   Tensor<T, 3> output_slice;  // used as a temporary variable
 
-  //// specify first and second dimensions for convolution
-  //// (numbering of dimensions starts from zero, annoyingly)
-  int count = 0;
+  // specify third dimension for convolution
   Eigen::array<ptrdiff_t, 1> dims({{2}});
-  for (auto filter : filters) {
-    output_slice = input.convolve(filter, dims);
+  int count = 0;
+  for ( decltype(filters.size()) i = 0; i < filters.size(); i++ ) {
+    output_slice = input.convolve(filters[i], dims);
+    output_slice = AddBias( output_slice, biases[i] );
     StackSlice(output_slice, &output_volume, count++ );
   }
   return output_volume;
 
+}
+
+// This function will become unnecessary when Eigen has better
+// inter-compatibility between tensors and matrices
+template <typename T>
+Tensor<T, 3> LayerSpecification<T>::AddBias(const Tensor<T,3>& input, const MatrixX<T>& bias ) const {
+	auto input_dimensions = input.dimensions();
+	//std::cout << input_dimensions[0] << " vs " << bias.rows() << std::endl;
+	DRAKE_DEMAND( input_dimensions[0] == bias.rows() );
+	DRAKE_DEMAND( input_dimensions[1] == bias.cols() );
+	//std::cout << "size is: " << input_dimensions[2] << std::endl;
+	DRAKE_DEMAND( input_dimensions[2] == 1 );
+
+	Tensor<T,3> output( input_dimensions[0], input_dimensions[1], input_dimensions[2]);
+
+	for ( int i = 0; i < bias.rows(); i++ ) {
+		for ( int j = 0; j < bias.cols(); j++ ) {
+			output(i,j,0) = input(i,j,0) + bias(i,j);
+		}
+	}
+
+	return output;
 }
 
 template <typename T>
@@ -106,33 +134,6 @@ std::unique_ptr<BasicVector<T>> LayerSpecification<T>::MatrixToBasicVector(
 }
 
 template <typename T>
-std::unique_ptr<BasicVector<T>> LayerSpecification<T>::FilterBankToBasicVector(
-    const std::vector<Tensor<T, 3>>& filter_bank) const {
-
-	int total_elements = 0;
-  for ( decltype(filter_bank.size()) i = 0; i < filter_bank.size(); i++ ) {
-  	total_elements += filter_bank[i].size();
-	}
-
-	VectorX<T> data_vector(total_elements);
-
-  int vector_index = 0;
-  for ( int m = 0; m < (int)(filter_bank.size()); m++ ) {
-  auto tensor_dimensions = filter_bank[m].dimensions();
-  for (int i = 0; i < tensor_dimensions[0]; i++) {
-    for (int j = 0; j < tensor_dimensions[1]; j++) {
-      for (int k = 0; k < tensor_dimensions[2]; k++) {
-        data_vector(vector_index++) = filter_bank[m](i, j, k);
-      }
-    }
-  }
-	}
-
-  std::unique_ptr<BasicVector<T>> uptr(new BasicVector<T>(data_vector));
-  return uptr;
-}
-
-template <typename T>
 std::unique_ptr<VectorX<T>> LayerSpecification<T>::VectorFromBasicVector(
     const BasicVector<T>& basic_vector ) const {
 
@@ -142,13 +143,13 @@ std::unique_ptr<VectorX<T>> LayerSpecification<T>::VectorFromBasicVector(
 
 template <typename T>
 std::unique_ptr<MatrixX<T>> LayerSpecification<T>::MatrixFromBasicVector(
-    const BasicVector<T>& basic_vector, int rows, int cols) const {
+    const BasicVector<T>& basic_vector, int rows, int cols, int offset /* = 0*/) const {
   MatrixX<T>* weights = new MatrixX<T>(rows, cols);
   *weights = MatrixX<T>::Zero(rows, cols);
 
   VectorX<T> v = basic_vector.get_value();
 
-  int vector_index = 0;
+  int vector_index = offset;
   for (int i = 0; i < rows; i++) {
     for (int j = 0; j < cols; j++) {
       (*weights)(i, j) = v(vector_index);
@@ -208,12 +209,64 @@ LayerSpecification<T>::BiasToBasicVector() const {
 #endif
     return VectorToBasicVector(vector_bias_);
   } else if (get_layer_type() == LayerType::Convolutional) {
-    return MatrixToBasicVector(matrix_bias_);
+    return MatrixBankToBasicVector( matrix_bias_bank_ );
   } else {
     // TODO(nikos-tri) do something better here
     DRAKE_DEMAND(false);
     return nullptr;  // compiler can't tell that control doesn't reach here
   }
+}
+
+template <typename T>
+std::unique_ptr<BasicVector<T>> LayerSpecification<T>::FilterBankToBasicVector(
+    const std::vector<Tensor<T, 3>>& filter_bank) const {
+
+	int total_elements = 0;
+  for ( decltype(filter_bank.size()) i = 0; i < filter_bank.size(); i++ ) {
+  	total_elements += filter_bank[i].size();
+	}
+
+	VectorX<T> data_vector(total_elements);
+
+  int vector_index = 0;
+  for ( int m = 0; m < (int)(filter_bank.size()); m++ ) {
+  	auto tensor_dimensions = filter_bank[m].dimensions();
+  	for (int i = 0; i < tensor_dimensions[0]; i++) {
+  	  for (int j = 0; j < tensor_dimensions[1]; j++) {
+  	    for (int k = 0; k < tensor_dimensions[2]; k++) {
+  	      data_vector(vector_index++) = filter_bank[m](i, j, k);
+  	    }
+  	  }
+  	}
+	}
+
+  std::unique_ptr<BasicVector<T>> uptr(new BasicVector<T>(data_vector));
+  return uptr;
+}
+
+template <typename T>
+std::unique_ptr<BasicVector<T>> LayerSpecification<T>::MatrixBankToBasicVector(
+    const std::vector<MatrixX<T>>& bias_bank ) const {
+
+	int total_elements = 0;
+	for ( auto this_bias_matrix : bias_bank ) {
+		total_elements += this_bias_matrix.size();
+	}
+
+	VectorX<T> data_vector(total_elements);
+
+  int vector_index = 0;
+  for ( auto this_bias_matrix : bias_bank ) {
+  	for ( int i = 0; i < this_bias_matrix.rows(); i++ ) {
+  		for ( int j = 0; j < this_bias_matrix.cols(); j++ ) {
+  			data_vector(vector_index)  = this_bias_matrix(i,j);
+  			vector_index++;
+			}
+		}
+	}
+
+  std::unique_ptr<BasicVector<T>> uptr(new BasicVector<T>(data_vector));
+  return uptr;
 }
 
 template <typename T>
@@ -223,12 +276,13 @@ std::unique_ptr<MatrixX<T>> LayerSpecification<T>::WeightsMatrixFromBasicVector(
   return MatrixFromBasicVector(basic_vector, matrix_weights_.rows(),
                                matrix_weights_.cols() );
 }
+
 template <typename T>
 std::vector<std::unique_ptr<Tensor<T, 3>>>
 LayerSpecification<T>::FilterBankFromBasicVector(
     const systems::BasicVector<T>& basic_vector) const {
   DRAKE_THROW_UNLESS(is_convolutional());
-  //DRAKE_THROW_UNLESS(num_weights_ == basic_vector.size());
+
   std::vector<std::unique_ptr<Tensor<T,3>>> recovered_filter_bank;
   int index_offset = 0;
   for ( decltype(filter_bank_.size()) i = 0; i < filter_bank_.size(); i++ ) {
@@ -249,11 +303,25 @@ std::unique_ptr<VectorX<T>> LayerSpecification<T>::BiasVectorFromBasicVector(
   DRAKE_THROW_UNLESS(is_fully_connected());
   return VectorFromBasicVector(basic_vector);
 }
+
 template <typename T>
-std::unique_ptr<MatrixX<T>> LayerSpecification<T>::BiasMatrixFromBasicVector(
+std::vector<std::unique_ptr<MatrixX<T>>>
+LayerSpecification<T>::BiasMatrixBankFromBasicVector(
     const systems::BasicVector<T>& basic_vector) const {
   DRAKE_THROW_UNLESS(is_convolutional());
-  return MatrixFromBasicVector(basic_vector, matrix_bias_.rows(), matrix_bias_.cols());
+
+  std::vector<std::unique_ptr<MatrixX<T>>> recovered_matrices;
+  int index_offset = 0;
+  //for ( decltype(matrix_bank_.size()) i = 0; i < matrix_bias_bank_.size(); i++ ) {
+  for ( auto this_matrix : matrix_bias_bank_ ) {
+  	recovered_matrices.push_back(
+  										MatrixFromBasicVector(basic_vector,
+  																					this_matrix.rows(),
+  																					this_matrix.cols(),
+  																					index_offset ) );
+  	index_offset += this_matrix.size();
+	}
+	return recovered_matrices;
 }
 
 // getters

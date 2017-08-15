@@ -58,53 +58,54 @@ bool Compare( const Tensor3d& t1, const Tensor3d& t2, double tolerance = 0);
 GTEST_TEST(FeedforwardNeuralNetworkTest, WeightsCoderDecoder) {
   MatrixXd weights1 = NewMatrix(3, 3);
   VectorXd bias1 = NewVector(3);
-  LayerSpecification<double> L1(weights1, bias1);
+  LayerSpecification<double> layer1(weights1, bias1);
 
   VectorXd bias2 = NewVector(7);
   MatrixXd weights2 = NewMatrix(7, 3);
-  LayerSpecification<double> L2(weights2, bias2);
+  LayerSpecification<double> layer2(weights2, bias2);
 
  	Tensor3d weights3 = NewTensor3(5, 2, 8); 
   MatrixXd bias3 = NewMatrix(5,13);
   std::vector<Tensor3d> weights_list3; weights_list3.push_back(weights3);
-  LayerSpecification<double> L3(weights_list3, bias3);
+  std::vector<MatrixXd> bias_list3; bias_list3.push_back(bias3);
+  LayerSpecification<double> layer3(weights_list3, bias_list3);
 
 	
 #ifndef NDEBUG
 	cout << "Encoding weights..." << endl;
 #endif
-  unique_ptr<BasicVector<double>> encoded_weights1 = L1.WeightsToBasicVector();
-  unique_ptr<BasicVector<double>> encoded_weights2 = L2.WeightsToBasicVector();
+  unique_ptr<BasicVector<double>> encoded_weights1 = layer1.WeightsToBasicVector();
+  unique_ptr<BasicVector<double>> encoded_weights2 = layer2.WeightsToBasicVector();
 #ifndef NDEBUG
 	cout << "Encoding tensor..." << endl;
 #endif
-  unique_ptr<BasicVector<double>> encoded_weights3 = L3.WeightsToBasicVector();
+  unique_ptr<BasicVector<double>> encoded_weights3 = layer3.WeightsToBasicVector();
 
 #ifndef NDEBUG
 	cout << "Encoding biases..." << endl;
 #endif
-  unique_ptr<BasicVector<double>> encoded_bias1 = L1.BiasToBasicVector();
-  unique_ptr<BasicVector<double>> encoded_bias2 = L2.BiasToBasicVector();
-  unique_ptr<BasicVector<double>> encoded_bias3 = L3.BiasToBasicVector();
+  unique_ptr<BasicVector<double>> encoded_bias1 = layer1.BiasToBasicVector();
+  unique_ptr<BasicVector<double>> encoded_bias2 = layer2.BiasToBasicVector();
+  unique_ptr<BasicVector<double>> encoded_bias3 = layer3.BiasToBasicVector();
 
 #ifndef NDEBUG
 	cout << "Decoding weights..." << endl;
 #endif
-  unique_ptr<MatrixXd> recovered_weights1 = L1.WeightsMatrixFromBasicVector(
+  unique_ptr<MatrixXd> recovered_weights1 = layer1.WeightsMatrixFromBasicVector(
   																													*encoded_weights1 );
-  unique_ptr<MatrixXd> recovered_weights2 = L2.WeightsMatrixFromBasicVector(
+  unique_ptr<MatrixXd> recovered_weights2 = layer2.WeightsMatrixFromBasicVector(
   																													*encoded_weights2 );
-  std::vector<unique_ptr<Tensor3d>> recovered_weights3 = L3.FilterBankFromBasicVector(
+  std::vector<unique_ptr<Tensor3d>> recovered_weights3 = layer3.FilterBankFromBasicVector(
   																													*encoded_weights3 );
 
 #ifndef NDEBUG
 	cout << "Decoding biases..." << endl;
 #endif
-	unique_ptr<VectorXd> recovered_bias1 = L1.BiasVectorFromBasicVector(
+	unique_ptr<VectorXd> recovered_bias1 = layer1.BiasVectorFromBasicVector(
 																														*encoded_bias1 );
-	unique_ptr<VectorXd> recovered_bias2 = L2.BiasVectorFromBasicVector(
+	unique_ptr<VectorXd> recovered_bias2 = layer2.BiasVectorFromBasicVector(
 																														*encoded_bias2 );
-	unique_ptr<MatrixXd> recovered_bias3 = L3.BiasMatrixFromBasicVector(
+	std::vector<unique_ptr<MatrixXd>> recovered_bias3 = layer3.BiasMatrixBankFromBasicVector(
 																														*encoded_bias3 );
   EXPECT_EQ(weights1, *recovered_weights1);
   EXPECT_EQ(weights2, *recovered_weights2);
@@ -112,7 +113,7 @@ GTEST_TEST(FeedforwardNeuralNetworkTest, WeightsCoderDecoder) {
 
   EXPECT_EQ(bias1, *recovered_bias1);
   EXPECT_EQ(bias2, *recovered_bias2);
-  EXPECT_EQ(bias3, *recovered_bias3);
+  EXPECT_EQ(bias3, *(recovered_bias3[0]));
 }
 
 //// Test that the NN is correctly loading and extracting its parameters from
@@ -182,17 +183,27 @@ GTEST_TEST(FeedforwardNeuralNetworkTest, ShapeParameters) {
 }
 
 GTEST_TEST(FeedforwardNeuralNetworkTest, ConvolutionTest) {
-	Tensor3d t(3,3,3); t.setZero();
-	std::vector<Tensor3d> filter_bank; filter_bank.push_back(t);
-	MatrixXd bias = MatrixXd::Zero(3,3);
-	LayerSpecification<double> layer( filter_bank, bias );
+	Tensor3d filter(3,3,3); filter.setZero();
+	std::vector<Tensor3d> filter_bank; filter_bank.push_back(filter);
+	MatrixXd bias = MatrixXd::Zero(9,9);
+	std::vector<MatrixXd> biases; biases.push_back(bias);
+	LayerSpecification<double> layer( filter_bank, biases );
 	
 	LayerResult<double> input; input.t = NewTensor3(9,9,3);
-	Tensor3d result = layer.Convolve( input.t, filter_bank );
 
 #ifndef NDEBUG
 	auto input_dimensions = input.t.dimensions();
-	cout << "Input input_dimensions are: ( " << input_dimensions[0] << ", " << input_dimensions[1] << ", " << input_dimensions[2] << " )" << endl;
+	cout << "Dimensions of input to convolution test: " << input_dimensions[0] <<", " << input_dimensions[1] << ", " << input_dimensions[2] << endl;
+	auto filter_dimensions = filter.dimensions();
+	cout << "Dimensions filter for convolution test: " << filter_dimensions[0] <<", " << filter_dimensions[1] << ", " << filter_dimensions[2] << endl;
+#endif
+
+
+	Tensor3d result = layer.ConvolveAndBias( input.t, filter_bank, biases );
+
+#ifndef NDEBUG
+	auto post_input_dimensions = input.t.dimensions();
+	cout << "Input post_input_dimensions are: ( " << post_input_dimensions[0] << ", " << post_input_dimensions[1] << ", " << post_input_dimensions[2] << " )" << endl;
 	auto result_dimensions = result.dimensions();
 	cout << "Result result_dimensions are: ( " << result_dimensions[0] << ", " << result_dimensions[1] << ", " << result_dimensions[2] << " )" << endl;
 #endif
