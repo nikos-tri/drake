@@ -21,8 +21,9 @@ class FeedforwardNeuralNetwork : public NeuralNetwork<T> {
 
   FeedforwardNeuralNetwork(const std::vector<LayerSpecification<T>> specs);
 
-	// TODO(nikos-tri) fixme
-  //std::unique_ptr<FeedforwardNeuralNetwork<AutoDiffXd>> ToAutoDiffXd() const {
+  // TODO(nikos-tri) fixme
+  // std::unique_ptr<FeedforwardNeuralNetwork<AutoDiffXd>> ToAutoDiffXd() const
+  // {
   //  return std::unique_ptr<FeedforwardNeuralNetwork<AutoDiffXd>>(
   //      DoToAutoDiffXd());
   //}
@@ -32,7 +33,8 @@ class FeedforwardNeuralNetwork : public NeuralNetwork<T> {
 
   int get_num_layers() const;
   int get_num_outputs() const;
-  const systems::BasicVector<T>& get_parameter_vector( int index, const systems::Context<T>& context ) const;
+  const systems::BasicVector<T>& get_parameter_vector(
+      int index, const systems::Context<T>& context) const;
   std::unique_ptr<systems::BasicVector<T>> EncodeWeightsToBasicVector(
       const MatrixX<T>& matrix) const;
   std::unique_ptr<MatrixX<T>> DecodeWeightsFromBasicVector(
@@ -46,8 +48,8 @@ class FeedforwardNeuralNetwork : public NeuralNetwork<T> {
                            NonlinearityType nonlinearity) const;
   VectorX<T> relu(VectorX<T> in) const;
 
-	// TODO(nikos-tri) fixme
-  //FeedforwardNeuralNetwork<AutoDiffXd>* DoToAutoDiffXd() const override;
+  // TODO(nikos-tri) fixme
+  // FeedforwardNeuralNetwork<AutoDiffXd>* DoToAutoDiffXd() const override;
 
   // TODO(nikos-tri)
   // FeedforwardNeuralNetwork<symbolic::Expression>* DoToSymbolic() const
@@ -57,7 +59,7 @@ class FeedforwardNeuralNetwork : public NeuralNetwork<T> {
   void WriteOutput(const VectorX<T> value,
                    systems::BasicVector<T>* output) const;
 
-	std::vector<LayerSpecification<T>> layer_specifications_;
+  std::vector<LayerSpecification<T>> layer_specifications_;
   // Indices for weights and biases, which are stored as params in the Context
   std::vector<int> weight_indices_;
   std::vector<int> bias_indices_;

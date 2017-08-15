@@ -16,7 +16,6 @@ enum class LayerType { FullyConnected, Convolutional, Dropout };
 enum class NonlinearityType { Relu, Sigmoid, Atan, None };
 
 // Store intermediate results between layers
-// TODO(nikos-tri) change this to be a union
 template <typename T>
 struct LayerResult {
   VectorX<T> v;
@@ -58,8 +57,7 @@ class LayerSpecification {
   void StackSlice(const Eigen::Tensor<T, 3>& slice, Eigen::Tensor<T, 3>* result,
                   int offset) const;
 
-	
-	VectorX<T> ReshapeTensorToVector( const Eigen::Tensor<T,3>& tensor ) const;
+  VectorX<T> ReshapeTensorToVector(const Eigen::Tensor<T, 3>& tensor) const;
   LayerResult<T> Relu(const LayerResult<T>& in) const;
 
   // Functions for encoding/decoding parameters to/from a BasicVector, which is
@@ -120,7 +118,7 @@ class LayerSpecification {
   MatrixX<T> matrix_weights_;
   std::vector<Eigen::Tensor<T, 3>> filter_bank_;
   //	  int num_weights_; //useful for checking that BasicVectors have the
-  //right size
+  // right size
 
   //	};
   //	union {

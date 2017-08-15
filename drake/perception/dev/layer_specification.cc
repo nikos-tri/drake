@@ -12,7 +12,6 @@ LayerResult<T> LayerSpecification<T>::Evaluate(
   // Can't call a convolutional layer with a vector input
   LayerResult<T> r;
   if (is_fully_connected()) {
-
     // Need to check if the input is a tensor, i.e. if
     // the previous layer is a convolutional layer, and then we need to
     // reshape it into a vector
@@ -20,11 +19,11 @@ LayerResult<T> LayerSpecification<T>::Evaluate(
     if (input.v.size() != 0) {
       input_vector = input.v;
     } else if (input.t.size() != 0) {
-      input_vector = ReshapeTensorToVector( input.t );
+      input_vector = ReshapeTensorToVector(input.t);
     } else {
-    	// Some data corruption has occurred
-    	DRAKE_DEMAND( false );
-		}
+      // Some data corruption has occurred
+      DRAKE_DEMAND(false);
+    }
 
     auto weights = *(WeightsMatrixFromBasicVector(weights_vector));
     auto bias = *(BiasVectorFromBasicVector(bias_vector));
@@ -36,7 +35,7 @@ LayerResult<T> LayerSpecification<T>::Evaluate(
     // convolutional layer after a fully-connected layer
     ConvolveAndBias(input.t, filter_bank_, matrix_bias_bank_);
   } else {
-  	// ...eventually support other types of layers
+    // ...eventually support other types of layers
     DRAKE_DEMAND(false);
   }
 
@@ -50,21 +49,22 @@ LayerResult<T> LayerSpecification<T>::Evaluate(
 }
 
 template <typename T>
-VectorX<T> LayerSpecification<T>::ReshapeTensorToVector( const Tensor<T,3>& tensor ) const {
-	VectorX<T> vector( tensor.size() );
-	auto tensor_dimensions = tensor.dimensions();
-	int vector_index = 0;
+VectorX<T> LayerSpecification<T>::ReshapeTensorToVector(
+    const Tensor<T, 3>& tensor) const {
+  VectorX<T> vector(tensor.size());
+  auto tensor_dimensions = tensor.dimensions();
+  int vector_index = 0;
 
-	for ( int i = 0; i < tensor_dimensions[0]; i++ ) {
-		for ( int j = 0; j < tensor_dimensions[1]; j++ ) {
-			for ( int k = 0; k < tensor_dimensions[2]; k++ ) {
-				vector( vector_index ) = tensor(i,j,k);
-				vector_index++;
-			}
-		}
-	}
+  for (int i = 0; i < tensor_dimensions[0]; i++) {
+    for (int j = 0; j < tensor_dimensions[1]; j++) {
+      for (int k = 0; k < tensor_dimensions[2]; k++) {
+        vector(vector_index) = tensor(i, j, k);
+        vector_index++;
+      }
+    }
+  }
 
-	return vector;
+  return vector;
 }
 
 template <typename T>
@@ -225,12 +225,12 @@ std::unique_ptr<Tensor<T, 3>> LayerSpecification<T>::Tensor3FromBasicVector(
 template <typename T>
 std::unique_ptr<systems::BasicVector<T>>
 LayerSpecification<T>::WeightsToBasicVector() const {
-  if (get_layer_type() == LayerType::FullyConnected) {
+  if (is_fully_connected()) {
     return MatrixToBasicVector(matrix_weights_);
-  } else if (get_layer_type() == LayerType::Convolutional) {
+  } else if (is_convolutional()) {
     return FilterBankToBasicVector(filter_bank_);
   } else {
-    // TODO(nikos-tri) do something better here
+    // ...eventually support other types of layers
     DRAKE_DEMAND(false);
     return nullptr;  // compiler can't tell that control doesn't reach here
   }
@@ -239,16 +239,12 @@ LayerSpecification<T>::WeightsToBasicVector() const {
 template <typename T>
 std::unique_ptr<systems::BasicVector<T>>
 LayerSpecification<T>::BiasToBasicVector() const {
-  if (get_layer_type() == LayerType::FullyConnected) {
-#ifndef NDEBUG
-    std::cout << "encoding as: " << std::endl
-              << *(VectorToBasicVector(vector_bias_)) << std::endl;
-#endif
+  if (is_fully_connected()) {
     return VectorToBasicVector(vector_bias_);
-  } else if (get_layer_type() == LayerType::Convolutional) {
+  } else if (is_convolutional()) {
     return MatrixBankToBasicVector(matrix_bias_bank_);
   } else {
-    // TODO(nikos-tri) do something better here
+    // ...eventually support other types of layers
     DRAKE_DEMAND(false);
     return nullptr;  // compiler can't tell that control doesn't reach here
   }
